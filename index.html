@@ -2466,8 +2466,8 @@ function startGame(si){
   raf=requestAnimationFrame(loop);
 }
 
-function pauseGame(){if(!gs.running||gs.paused)return;gs.paused=true;showScreen('pause');document.getElementById('gameUI').style.display='block';}
-function resumeGame(){gs.paused=false;document.getElementById('pauseScreen').classList.remove('active');lastT=performance.now();raf=requestAnimationFrame(loop);}
+function pauseGame(){if(!gs.running||gs.paused)return;gs.paused=true;BGM.pause();showScreen('pause');document.getElementById('gameUI').style.display='block';}
+function resumeGame(){gs.paused=false;BGM.resume();document.getElementById('pauseScreen').classList.remove('active');lastT=performance.now();raf=requestAnimationFrame(loop);}
 function retireGame(){
   gs.running=false;gs.retired=true;
   if(raf)cancelAnimationFrame(raf);

@@ -667,7 +667,7 @@ canvas{display:block;position:absolute;top:0;left:0;pointer-events:none;}
 #txt-hp{color:rgba(0,200,255,0.6);font-size:clamp(7px,1vw,9px);text-align:center;margin-top:3px;letter-spacing:2px;font-family:'Orbitron',monospace;}
 
 #topRight{
-  position:absolute;top:8px;right:var(--hud-margin-x);
+  position:absolute;top:max(8px, calc(env(safe-area-inset-top, 0px) + 8px));right:var(--hud-margin-x);
   display:flex;flex-direction:column;align-items:flex-end;
   gap:4px;
 }
@@ -692,6 +692,7 @@ canvas{display:block;position:absolute;top:0;left:0;pointer-events:none;}
   cursor:pointer;transition:all 0.13s;
   box-shadow:0 0 12px rgba(0,180,255,0.25),inset 0 0 10px rgba(0,150,255,0.07);
   position:relative;overflow:hidden;
+  align-self:flex-start;
 }
 #ui-pause::before,#ui-pause::after{
   content:'';position:absolute;
@@ -2851,7 +2852,13 @@ function getPhase(){
   if(gs.postBossPhase !== null && gs.postBossPhase !== undefined) return gs.postBossPhase;
   const el=CFG.GAME_TIME-gs.timeLeft;
   if(gs.timeLeft<=13) return 5;
-  if(gs.timeLeft<=20) return 4;
+  // STAGE1のみRUSHトリガー（残り30秒）と同期してphase4へ移行
+  // STAGE2〜4はボスイベント管理のため従来通り残り20秒でphase4
+  if(gs.stage===0){
+    if(gs.timeLeft<=30) return 4;
+  } else {
+    if(gs.timeLeft<=20) return 4;
+  }
   return el<10?0:el<30?1:el<45?2:3;
 }
 

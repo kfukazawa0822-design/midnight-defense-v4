@@ -156,6 +156,27 @@ const BGM = (() => {
     if (!v) stopAll();
   }
 
+  /**
+   * 現在のBGMを一時停止する（再生位置を保持）
+   */
+  function pause() {
+    if (_currentKey && _audios[_currentKey]) {
+      _audios[_currentKey].pause();
+    }
+  }
+
+  /**
+   * 一時停止中のBGMを再開する（止まった位置から）
+   */
+  function resume() {
+    if (!_bgmEnabled) return;
+    if (_currentKey && _audios[_currentKey]) {
+      _audios[_currentKey].play().catch(err => {
+        console.warn('[BGM] resume失敗: ' + err.message);
+      });
+    }
+  }
+
   // =================================================================
   // 内部: 現在再生中のBGMを停止
   // =================================================================
@@ -168,5 +189,5 @@ const BGM = (() => {
     _pendingKey = null;
   }
 
-  return { play, stop, stopAll, setVolume, setBGMEnabled };
+  return { play, stop, stopAll, setVolume, setBGMEnabled, pause, resume };
 })();

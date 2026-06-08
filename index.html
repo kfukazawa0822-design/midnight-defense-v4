@@ -691,8 +691,8 @@ canvas{display:block;position:absolute;top:0;left:0;pointer-events:none;}
   border-radius:10px;
   cursor:pointer;transition:all 0.13s;
   box-shadow:0 0 12px rgba(0,180,255,0.25),inset 0 0 10px rgba(0,150,255,0.07);
-  position:relative;overflow:hidden;
-  align-self:flex-start;
+  position:absolute;overflow:hidden;
+  bottom:24px;right:30px;
 }
 #ui-pause::before,#ui-pause::after{
   content:'';position:absolute;
@@ -1025,8 +1025,8 @@ canvas{display:block;position:absolute;top:0;left:0;pointer-events:none;}
       <div id="ui-level-txt">LEVEL 1</div>
       <div id="ui-survive">00:00</div>
     </div>
-    <button id="ui-pause" aria-label="PAUSE"></button>
   </div>
+  <button id="ui-pause" aria-label="PAUSE"></button>
   <div id="endless-rush-badge">⚠ RUSH</div>
   <div id="combo-area" style="opacity:0;">
     <div id="combo-num">x2</div>
@@ -2902,6 +2902,8 @@ function spawnEnemy(){
   else{sx=W*0.28+Math.random()*W*0.44;sy=minY+Math.random()*H*0.1;}
 
   const cx=W/2, cy=H*0.42;
+  // 右上UIエリア除外（X>W*0.72 かつ Y<H*0.22 の組み合わせを回避）
+  if(sy < H*0.22 && sx > W*0.72) sx = W*0.72 - Math.random()*W*0.10;
   const scatter=0.18+Math.random()*0.14;
   const tx=cx+(sx-cx)*scatter+(Math.random()-0.5)*W*0.26;
   const ty=cy+(sy-cy)*scatter+(Math.random()-0.5)*H*0.18;
@@ -3807,6 +3809,8 @@ function spawnBossPattern(data){
 // ─── ボス召喚敵を1体スポーン ───
 function _spawnBossEnemy(def,sx,sy){
   const W=gc.width,H=gc.height;
+  // 右上UIエリア除外（X>W*0.72 かつ Y<H*0.22 の組み合わせを回避）
+  if(sy < H*0.22 && sx > W*0.72) sx = W*0.72 - Math.random()*W*0.10;
   const cx=W/2,cy=H*0.42;
   // 召喚位置から少しだけ散布してプレイヤー方向へ向かわせる
   const scatter=0.12+Math.random()*0.10;

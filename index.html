@@ -1254,6 +1254,9 @@ let _pendingStageUnlock=0;     // 新規解放されたステージID（1-4）�
 let _bossSpawnQueue=[];        // 廃止（互換のため残す）
 let _bossSpawnTimer=0;         // 廃止（互換のため残す）
 let _bossWaveSteps=[];         // [wave][step][{sx,sy}] ウェーブ×段階×座標
+let _prolifQueue=[];           // [{delay, sx, sy}] 増殖遅延スポーンキュー
+let _prolifTimer=0;            // 増殖キュータイマー（秒）
+let _slashEffects=[];          // [{elapsed, startAt, alpha, offsetX}] 斬撃エフェクト
 let gs={stage:0};
 let enemies=[],bullets=[],parts=[],floats=[];
 let spawnT=0,lastT=0,raf=null;
@@ -2443,6 +2446,7 @@ function startGame(si){
   enemies=[];bullets=[];parts=[];floats=[];
   spawnT=0;shakeMag=0;cdActive=false;_lastPlayerLv=0;
   _bossSpawnQueue=[];_bossSpawnTimer=0;_bossWaveSteps=[];
+  _prolifQueue=[];_prolifTimer=0;_slashEffects=[];
   document.getElementById('boss-ui').style.display='none';
   if(cdTimer){clearTimeout(cdTimer);cdTimer=null;}
   if(rainRaf){cancelAnimationFrame(rainRaf);rainRaf=null;}
@@ -2909,6 +2913,22 @@ function spawnEnemy(){
   const ty=cy+(sy-cy)*scatter+(Math.random()-0.5)*H*0.18;
   enemies.push({def,sx,sy,tx,ty,x:sx,y:sy,progress:0,hp:def.hp,maxHp:def.hp,
     approachSec:CFG.BASE_APPROACH/def.speed,hitFlash:0,warnPhase:0,id:Math.random()});
+
+  // ─── 増殖（通常フェーズのみ・5%確率）───
+  // 中心1体スポーン後、左右に各0.15秒遅延で2体追加
+  if(!isRush && !isSuperRush && Math.random() < 0.05){
+    const spread = W * 0.07;  // 左右のズレ幅
+    [-1, 1].forEach((dir, i) => {
+      const psx = Math.max(28, Math.min(W-28, sx + dir * spread));
+      let psy = sy + (Math.random()-0.5) * H * 0.04;
+      psy = Math.max(H*0.18, Math.min(H*0.55, psy));
+      // 右上UIエリア除外
+      let psxFinal = psx;
+      if(psy < H*0.22 && psxFinal > W*0.72) psxFinal = W*0.72 - Math.random()*W*0.10;
+      const pdef = pool[Math.floor(Math.random()*pool.length)];
+      _prolifQueue.push({ delay: 0.15 * (i + 1), sx: psxFinal, sy: psy, def: pdef });
+    });
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -3883,6 +3903,7 @@ function triggerBossTimeUp(){
   gs.damageTaken=(gs.damageTaken||0)+BOSS_DATA[gs.stage].attackDamage;
   doShake(20);
   flashDamage();
+  triggerSlashEffect();   // 斬撃エフェクト発火
   const W=gc.width,H=gc.height;
   floats.push({
     x:W/2,y:H*0.38,
@@ -3893,6 +3914,97 @@ function triggerBossTimeUp(){
     decayRate:1.8,
   });
   if(gs.hp<=0&&gs.running) triggerGO();
+}
+
+// ─── 斬撃エフェクト発火 ───
+function triggerSlashEffect(){
+  const W=gc.width,H=gc.height;
+  // 3本を120ms間隔で発火。各スラッシュに位置オフセットを持たせる
+  const offsets=[
+    {startAt:0,    offsetX:W*0.05,  offsetY:-H*0.08},
+    {startAt:0.12, offsetX:-W*0.04, offsetY: H*0.04},
+    {startAt:0.24, offsetX: W*0.02, offsetY: H*0.12},
+  ];
+  offsets.forEach(o=>{
+    _slashEffects.push({
+      elapsed: 0,
+      startAt: o.startAt,
+      offsetX: o.offsetX,
+      offsetY: o.offsetY,
+      alpha:   0,
+      active:  false,
+    });
+  });
+}
+
+// ─── 斬撃エフェクト更新 ───
+function updateSlashEffects(dt){
+  for(let i=_slashEffects.length-1;i>=0;i--){
+    const s=_slashEffects[i];
+    s.elapsed+=dt;
+    if(s.elapsed<s.startAt) continue;  // 発火待ち
+
+    const t=(s.elapsed-s.startAt);     // 発火からの経過秒
+    const dur=0.22;                     // 1本あたりの表示時間
+    if(t>dur){ _slashEffects.splice(i,1); continue; }
+
+    // フェードイン（前半30%）→ ピーク → フェードアウト（後半40%）
+    const prog=t/dur;
+    if(prog<0.30)       s.alpha=prog/0.30;
+    else if(prog<0.60)  s.alpha=1.0;
+    else                s.alpha=1.0-(prog-0.60)/0.40;
+
+    // 発火タイミングで1本目だけshake
+    if(!s.active){
+      s.active=true;
+      doShake(6);
+    }
+  }
+}
+
+// ─── 斬撃エフェクト描画（ctx使用、shake適用後に呼ぶ）───
+function drawSlashEffects(){
+  if(_slashEffects.length===0) return;
+  const W=gc.width,H=gc.height;
+  const diag=Math.sqrt(W*W+H*H)*1.1;
+
+  _slashEffects.forEach(s=>{
+    if(s.elapsed<s.startAt||s.alpha<=0) return;
+
+    // 斜め（左上→右下）の対角線を中心にオフセット
+    // 左上外スタート → 右下外エンド
+    const cx=W/2+s.offsetX, cy=H/2+s.offsetY;
+    const nx= 1/Math.sqrt(2), ny= 1/Math.sqrt(2);  // 45度方向
+    const x1=cx - nx*diag*0.6;
+    const y1=cy - ny*diag*0.6;
+    const x2=cx + nx*diag*0.6;
+    const y2=cy + ny*diag*0.6;
+
+    ctx.save();
+    ctx.globalAlpha=Math.max(0,s.alpha*0.92);
+
+    // グロー（外側・赤）
+    ctx.shadowColor='rgba(255,60,60,0.9)';
+    ctx.shadowBlur=28;
+    const grad=ctx.createLinearGradient(x1,y1,x2,y2);
+    grad.addColorStop(0,  'rgba(255,255,255,0)');
+    grad.addColorStop(0.2,'rgba(255,120,120,0.9)');
+    grad.addColorStop(0.5,'rgba(255,255,255,1.0)');
+    grad.addColorStop(0.8,'rgba(255,80,80,0.9)');
+    grad.addColorStop(1,  'rgba(255,255,255,0)');
+    ctx.strokeStyle=grad;
+    ctx.lineWidth=16;
+    ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+
+    // 中心線（白・細め）
+    ctx.shadowBlur=10;
+    ctx.strokeStyle=`rgba(255,255,255,${s.alpha*0.8})`;
+    ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+
+    ctx.restore();
+  });
 }
 
 // ─── ボス描画（drawPlayer() より前に呼ぶ）───
@@ -4152,6 +4264,29 @@ function loop(now){
         spawnT+=dt;if(spawnT>=interval){spawnT=0;spawnEnemy();}
       }
 
+      // ─── 増殖キュー消化 ───
+      if(_prolifQueue.length > 0 && gs.timeLeft > 5 && !gs.bossActive){
+        _prolifTimer += dt;
+        while(_prolifQueue.length > 0 && _prolifTimer >= _prolifQueue[0].delay){
+          const p = _prolifQueue.shift();
+          _prolifTimer = 0;
+          const W=gc.width,H=gc.height;
+          const cx=W/2,cy=H*0.42;
+          const ph=getPhase();
+          const st=STAGES[gs.stage];
+          const baseMaxOn = st.maxOn[Math.min(ph,3)];
+          if(enemies.length < baseMaxOn){
+            const scatter=0.18+Math.random()*0.14;
+            const tx=cx+(p.sx-cx)*scatter+(Math.random()-0.5)*W*0.26;
+            const ty=cy+(p.sy-cy)*scatter+(Math.random()-0.5)*H*0.18;
+            enemies.push({def:p.def,sx:p.sx,sy:p.sy,tx,ty,x:p.sx,y:p.sy,
+              progress:0,hp:p.def.hp,maxHp:p.def.hp,
+              approachSec:CFG.BASE_APPROACH/p.def.speed,
+              hitFlash:0,warnPhase:0,id:Math.random()});
+          }
+        }
+      }
+
       // ─── ボスウェーブ ステートマシン ───
       if(gs.bossStarted){
         const data=BOSS_DATA[gs.stage];
@@ -4228,6 +4363,7 @@ function loop(now){
       if(gs.bossFlash>0) gs.bossFlash=Math.max(0,gs.bossFlash-dt*10);
 
       updateEnemies(dt);updateBullets(dt);updateParts(dt);updateFloats(dt);checkPlayerEvolution();updateHUD();
+      updateSlashEffects(dt);
     }
   } else updateParts(dt);
 
@@ -4239,6 +4375,7 @@ function loop(now){
   ctx.save();applyShake();
   drawBoss();       // ← プレイヤー・敵より奥に描画
   drawPlayer();drawEnemies();drawBullets();drawParts();drawFloats();
+  drawSlashEffects();  // ← 最前面に描画（全要素の上）
   if(showRush){
     const ri=0.15+0.08*Math.sin(now*0.006*Math.PI*2);
     const rg=ctx.createRadialGradient(W/2,H/2,H*0.3,W/2,H/2,H*0.85);
@@ -4256,7 +4393,7 @@ function handleTap(tapX,tapY){
   if(!gs.running||gs.paused) return;
   const W=gc.width,H=gc.height;
 
-  const TAP_R = Math.min(W,H)*0.10;
+  const TAP_R = Math.min(W,H)*0.14;
   let hitEnemyJ = -1;
   let bestDist = Infinity;
 

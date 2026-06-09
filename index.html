@@ -140,6 +140,19 @@ canvas{display:block;position:absolute;top:0;left:0;pointer-events:none;}
   margin-top:clamp(12px,2.5vw,20px);
   animation:tapBlink 1.4s ease-in-out infinite;
 }
+.tut-dots{
+  display:flex;justify-content:center;gap:8px;
+  margin-top:clamp(8px,1.5vw,12px);
+}
+.tut-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:rgba(0,200,255,0.25);
+  transition:background 0.2s;
+}
+.tut-dot.active{
+  background:rgba(0,200,255,0.85);
+  box-shadow:0 0 6px rgba(0,200,255,0.7);
+}
 @keyframes tapBlink{0%,100%{opacity:0.38;}50%{opacity:0.9;}}
 #tutorialCard::before{
   content:'';display:block;width:100%;height:2px;
@@ -476,6 +489,13 @@ canvas{display:block;position:absolute;top:0;left:0;pointer-events:none;}
 .pause-btn.red{color:#f55;text-shadow:0 0 8px #f55;border-color:rgba(255,80,80,0.6);}
 .pause-btn.red:hover{background:rgba(255,80,80,0.1);}
 .pause-btn:active{transform:scale(0.96);}
+#pause-bgm-wrap{
+  display:flex;align-items:center;gap:8px;
+  margin-top:20px;padding:8px 20px;
+  background:rgba(0,8,30,0.6);
+  border:1px solid rgba(0,200,255,0.15);
+  border-radius:6px;
+}
 
 /* ─── RESULT ─── */
 #resultScreen{background:#03020f;}
@@ -571,19 +591,39 @@ canvas{display:block;position:absolute;top:0;left:0;pointer-events:none;}
 
 /* ─── チュートリアルトグル ─── */
 #tut-toggle-wrap{
-  width:100%;display:flex;align-items:center;justify-content:space-between;
-  padding:10px 14px;margin:4px 0 0;
+  width:100%;max-width:600px;display:flex;align-items:center;
+  padding:10px 14px;margin:4px 0 0;gap:0;
   background:rgba(0,8,30,0.6);
   border:1px solid rgba(0,200,255,0.15);
   box-sizing:border-box;
 }
-#tut-toggle-label{
+.toggle-col{
+  flex:0 0 50%;width:50%;display:flex;align-items:center;gap:6px;
+  justify-content:space-between;
+  min-width:0;box-sizing:border-box;
+}
+.toggle-col + .toggle-col{
+  border-left:1px solid rgba(0,200,255,0.18);
+  padding-left:14px;margin-left:0;
+}
+.toggle-col:first-child{padding-right:14px;}
+.toggle-label{
   font-family:'Share Tech Mono',monospace;
   color:rgba(0,200,255,0.65);
   font-size:clamp(9px,1.4vw,11px);
   letter-spacing:2px;
+  flex-shrink:0;
 }
-#tut-toggle-switch{
+.toggle-state{
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(8px,1.2vw,10px);
+  letter-spacing:2px;
+  color:rgba(0,200,255,0.45);
+  min-width:24px;text-align:right;
+  margin-left:auto;margin-right:6px;
+  flex-shrink:0;
+}
+.toggle-switch{
   position:relative;width:44px;height:24px;
   background:#444;border-radius:12px;
   cursor:pointer;transition:background 0.25s;
@@ -591,22 +631,22 @@ canvas{display:block;position:absolute;top:0;left:0;pointer-events:none;}
   flex-shrink:0;
   -webkit-tap-highlight-color:transparent;
 }
-#tut-toggle-switch.on{background:#0099aa;}
-#tut-toggle-knob{
+.toggle-switch.on{background:#0099aa;}
+.toggle-knob{
   position:absolute;top:3px;left:3px;
   width:16px;height:16px;border-radius:50%;
   background:#fff;
   transition:transform 0.25s cubic-bezier(0.4,0,0.2,1);
   box-shadow:0 1px 3px rgba(0,0,0,0.4);
 }
+.toggle-switch.on .toggle-knob{transform:translateX(20px);}
+/* 旧IDスタイル（後方互換）*/
+#tut-toggle-label{font-family:'Share Tech Mono',monospace;color:rgba(0,200,255,0.65);font-size:clamp(9px,1.4vw,11px);letter-spacing:2px;}
+#tut-toggle-switch{position:relative;width:44px;height:24px;background:#444;border-radius:12px;cursor:pointer;transition:background 0.25s;border:1px solid rgba(255,255,255,0.12);flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+#tut-toggle-switch.on{background:#0099aa;}
+#tut-toggle-knob{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform 0.25s cubic-bezier(0.4,0,0.2,1);box-shadow:0 1px 3px rgba(0,0,0,0.4);}
 #tut-toggle-switch.on #tut-toggle-knob{transform:translateX(20px);}
-#tut-toggle-state{
-  font-family:'Share Tech Mono',monospace;
-  font-size:clamp(8px,1.2vw,10px);
-  letter-spacing:2px;
-  color:rgba(0,200,255,0.45);
-  min-width:24px;text-align:right;margin-right:8px;
-}
+#tut-toggle-state{font-family:'Share Tech Mono',monospace;font-size:clamp(8px,1.2vw,10px);letter-spacing:2px;color:rgba(0,200,255,0.45);min-width:24px;text-align:right;margin-right:8px;}
 
 .stage-grid {
   justify-content: center;
@@ -858,7 +898,8 @@ canvas{display:block;position:absolute;top:0;left:0;pointer-events:none;}
       <div class="tut-stage-badge" id="tutStageBadge">STAGE 02</div>
       <div class="tut-title" id="tutTitle">FAST ENEMIES INCOMING</div>
       <div class="tut-body" id="tutBody">テキスト</div>
-      <div class="tut-tap">▶ &nbsp;TAP TO START</div>
+      <div class="tut-dots" id="tutDots" style="display:none;"></div>
+      <div class="tut-tap" id="tutTap">▶ &nbsp;TAP TO START</div>
     </div>
   </div>
 </div>
@@ -935,6 +976,14 @@ canvas{display:block;position:absolute;top:0;left:0;pointer-events:none;}
   <div class="pause-ttl">PAUSED</div>
   <button class="pause-btn green" id="btnContinue">► &nbsp;CONTINUE</button>
   <button class="pause-btn red" id="btnRetire">✖ &nbsp;RETIRE</button>
+  <!-- BGMトグル -->
+  <div id="pause-bgm-wrap">
+    <span class="toggle-label">BGM</span>
+    <span class="toggle-state" id="pause-bgm-state"></span>
+    <div class="toggle-switch" id="pause-bgm-switch">
+      <div class="toggle-knob"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ═══ RESULT ═══ -->
@@ -1128,6 +1177,7 @@ const Save = {
   KEY_SCORES: 'md_endless_scores',
   KEY_TUT:    'md_endless_tut',
   KEY_SEEN:   'md_stage_seen',   // 一度でも選択されたステージID/'endless' のSet
+  KEY_BGM:    'md_bgm_on',       // BGM ON/OFF（デフォルト true）
 
   getClears(){
     try{ return new Set(JSON.parse(localStorage.getItem(this.KEY_CLEARS)||'[]')); }
@@ -1158,6 +1208,13 @@ const Save = {
     try{ localStorage.setItem(this.KEY_SEEN, JSON.stringify([...s])); }catch(e){}
   },
   isSeen(id){ return this.getSeen().has(id); },
+
+  getBGMOn(){
+    try{ return localStorage.getItem(this.KEY_BGM)!=='0'; }catch(e){ return true; }
+  },
+  setBGMOn(v){
+    try{ localStorage.setItem(this.KEY_BGM, v?'1':'0'); }catch(e){}
+  },
 
   getTutOn(){
     try{ return localStorage.getItem(this.KEY_TUT)!=='0'; }catch(e){ return true; }
@@ -1959,35 +2016,80 @@ function buildCards(mode){
   endlessWrap.appendChild(ec);
   g.appendChild(endlessWrap);
 
-  // ─── チュートリアルON/OFFトグル（常時表示）───
+  // ─── チュートリアル＋BGM ON/OFFトグル（横並び2カラム）───
   {
     const tw=document.createElement('div');
     tw.id='tut-toggle-wrap';
-    const lbl=document.createElement('span');
-    lbl.id='tut-toggle-label';
-    lbl.textContent='TUTORIAL';
-    const stateEl=document.createElement('span');
-    stateEl.id='tut-toggle-state';
-    const sw=document.createElement('div');
-    sw.id='tut-toggle-switch';
-    const knob=document.createElement('div');
-    knob.id='tut-toggle-knob';
-    sw.appendChild(knob);
-    const on=Save.getTutOn();
-    if(on){ sw.classList.add('on'); stateEl.textContent='ON'; }
-    else { stateEl.textContent='OFF'; }
-    const toggleFn=()=>{
+
+    // ── チュートリアル列 ──
+    const tutCol=document.createElement('div');
+    tutCol.className='toggle-col';
+    const tutLbl=document.createElement('span');
+    tutLbl.className='toggle-label';
+    tutLbl.textContent='TUTORIAL';
+    const tutState=document.createElement('span');
+    tutState.className='toggle-state';
+    const tutSw=document.createElement('div');
+    tutSw.className='toggle-switch';
+    tutSw.id='tut-toggle-switch';
+    const tutKnob=document.createElement('div');
+    tutKnob.className='toggle-knob';
+    tutSw.appendChild(tutKnob);
+    const tutOn=Save.getTutOn();
+    if(tutOn){ tutSw.classList.add('on'); tutState.textContent='ON'; }
+    else { tutState.textContent='OFF'; }
+    const tutFn=()=>{
       const next=!Save.getTutOn();
       Save.setTutOn(next);
-      sw.classList.toggle('on',next);
-      stateEl.textContent=next?'ON':'OFF';
+      tutSw.classList.toggle('on',next);
+      tutState.textContent=next?'ON':'OFF';
       Sound.se('toggle');
     };
-    sw.addEventListener('click',e=>{e.stopPropagation();toggleFn();});
-    sw.addEventListener('touchend',e=>{e.preventDefault();e.stopPropagation();toggleFn();},{passive:false});
-    tw.appendChild(lbl);
-    tw.appendChild(stateEl);
-    tw.appendChild(sw);
+    tutSw.addEventListener('click',e=>{e.stopPropagation();tutFn();});
+    tutSw.addEventListener('touchend',e=>{e.preventDefault();e.stopPropagation();tutFn();},{passive:false});
+    tutCol.appendChild(tutLbl);
+    tutCol.appendChild(tutState);
+    tutCol.appendChild(tutSw);
+
+    // ── BGM列 ──
+    const bgmCol=document.createElement('div');
+    bgmCol.className='toggle-col';
+    const bgmLbl=document.createElement('span');
+    bgmLbl.className='toggle-label';
+    bgmLbl.textContent='BGM';
+    const bgmState=document.createElement('span');
+    bgmState.className='toggle-state';
+    bgmState.id='bgm-toggle-state';
+    const bgmSw=document.createElement('div');
+    bgmSw.className='toggle-switch';
+    bgmSw.id='bgm-toggle-switch';
+    const bgmKnob=document.createElement('div');
+    bgmKnob.className='toggle-knob';
+    bgmSw.appendChild(bgmKnob);
+    const bgmOn=Save.getBGMOn();
+    if(bgmOn){ bgmSw.classList.add('on'); bgmState.textContent='ON'; }
+    else { bgmState.textContent='OFF'; }
+    const bgmFn=()=>{
+      const next=!Save.getBGMOn();
+      Save.setBGMOn(next);
+      bgmSw.classList.toggle('on',next);
+      bgmState.textContent=next?'ON':'OFF';
+      BGM.setBGMEnabled(next);
+      if(next){
+        // ONに戻したとき: 現在のシーンのBGMを先頭から再生
+        if(gs.running) BGM.play(gs.endless?'endless':'stage');
+        else BGM.play('select');
+      }
+      Sound.se('toggle');
+    };
+    bgmSw.addEventListener('click',e=>{e.stopPropagation();bgmFn();});
+    bgmSw.addEventListener('touchend',e=>{e.preventDefault();e.stopPropagation();bgmFn();},{passive:false});
+    bgmCol.appendChild(bgmLbl);
+    bgmCol.appendChild(bgmState);
+    bgmCol.appendChild(bgmSw);
+
+    tw.appendChild(tutCol);
+    tw.appendChild(bgmCol);
     g.appendChild(tw);
   }
 
@@ -2029,7 +2131,7 @@ const ENDLESS_TUT = [
     imgKey: 'endless_tutorial_02',
     fallback: '💪',
     title: 'SPECIAL SUPPORT ITEMS',
-    text: 'ENDLESS MODE限定で、\n特殊アイテムが低確率出現！\n[ダンベル]　撃破するとHP回復\n[マッチョマン]　撃破すると全敵に1ダメージ\n見つけたら最優先で回収しよう。',
+    text: 'ENDLESS MODE限定で、\n特殊アイテムが低確率出現！\n[ダンベル]　タップでHP回復\n[マッチョマン]　2回タップで全敵に1ダメ\n見つけたら最優先で回収しよう。',
     tap: '▶ &nbsp;TAP TO NEXT',
   },
   {
@@ -2221,9 +2323,14 @@ let _s1tActive = false;
 
 const TUTORIAL_DATA={
   1:null,
-  2:{badge:'STAGE 02 — CARBS MTN',title:'FAST ENEMIES INCOMING',
+  2:[
+    {badge:'STAGE 02 — CARBS MTN',title:'FAST ENEMIES INCOMING',
      body:'一部、接近スピードの速い敵が出現！\n焦らず優先順位を見極めて対処しよう。',
      enemies:['パン','おにぎり','ラーメン'],imgKey:'stage2_tutorial'},
+    {badge:'STAGE 02 — BOSS ENCOUNTER',title:'BOSS INCOMING',
+     body:'（仮テキスト）\n食欲の化身が目覚めた。\n召喚される敵をすべて倒してボスを撃退せよ。',
+     enemies:[],imgKey:'stage2_tutorial_02'},
+  ],
   3:{badge:'STAGE 03 — LIPID JUNGLE',title:'SHIELDED ENEMIES DETECTED',
      body:'大型敵は2回タップが必要。\nまずはシールドを破壊しよう。',
      enemies:['背脂麺','ステーキ','ポテト'],imgKey:'stage3_tutorial'},
@@ -2233,30 +2340,39 @@ const TUTORIAL_DATA={
 };
 
 let pendingStage=null;
+let _tutPages=[];     // 現在表示中のチュートリアルページ配列
+let _tutPageIdx=0;    // 現在のページインデックス
 
-function showTutorial(si){
-  BGM.stopAll();
-  const stId=si+1;
-  // ステージ1はオリジナル2枚スライドチュートリアル
-  if(stId===1){
-    _s1tActive = true;
-    showStage1Tutorial();
-    return;
-  }
-  const data=TUTORIAL_DATA[stId];
-  if(!data){ startGame(si); return; }
-
-  pendingStage=si;
+function _showTutPage(si, pages, idx){
+  const data=pages[idx];
+  const isLast=(idx>=pages.length-1);
 
   document.getElementById('tutStageBadge').textContent=data.badge;
   document.getElementById('tutTitle').textContent=data.title;
   document.getElementById('tutBody').textContent=data.body;
 
+  // TAP テキスト切り替え
+  const tapEl=document.getElementById('tutTap');
+  tapEl.textContent=isLast?'▶ \u00a0TAP TO START':'▶ \u00a0TAP TO NEXT';
+
+  // ドットナビ（2枚以上のときのみ表示）
+  const dotsEl=document.getElementById('tutDots');
+  if(pages.length>1){
+    dotsEl.style.display='flex';
+    dotsEl.innerHTML='';
+    pages.forEach((_,i)=>{
+      const d=document.createElement('div');
+      d.className='tut-dot'+(i===idx?' active':'');
+      dotsEl.appendChild(d);
+    });
+  } else {
+    dotsEl.style.display='none';
+  }
+
   const pc=document.getElementById('tutorialPreviewCanvas');
   const pw=pc.offsetWidth||560, ph=pc.offsetHeight||180;
   pc.width=pw; pc.height=ph;
 
-  // ─── チュートリアル画像: Assets.get() で取得 ───
   const previewEl=document.getElementById('tutorialPreview');
   const tutImg = data.imgKey ? Assets.get(data.imgKey) : null;
   if(tutImg){
@@ -2268,18 +2384,59 @@ function showTutorial(si){
   } else {
     previewEl.style.backgroundImage='none';
     pc.style.display='block';
-    drawTutorialPreview(pc,si,data.enemies);
+    drawTutorialPreview(pc,si,data.enemies||[]);
   }
 
+  // カードアニメーション
   const card=document.getElementById('tutorialCard');
-  card.style.transform='';card.style.transformOrigin='';
   card.style.animation='none'; void card.offsetWidth;
   card.style.animation='cardPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both';
-  document.getElementById('tutorialOverlay').classList.add('active');
   requestAnimationFrame(()=>requestAnimationFrame(scaleTutCard));
+}
+
+function showTutorial(si){
+  BGM.stopAll();
+  const stId=si+1;
+  // ステージ1はオリジナル2枚スライドチュートリアル
+  if(stId===1){
+    _s1tActive = true;
+    showStage1Tutorial();
+    return;
+  }
+  const raw=TUTORIAL_DATA[stId];
+  if(!raw){ startGame(si); return; }
+
+  // 配列でも単体オブジェクトでも配列として扱う
+  _tutPages=Array.isArray(raw)?raw:[raw];
+  _tutPageIdx=0;
+  pendingStage=si;
+
+  _showTutPage(si, _tutPages, _tutPageIdx);
+  document.getElementById('tutorialOverlay').classList.add('active');
 
   if(rainRaf){cancelAnimationFrame(rainRaf);rainRaf=null;}
 }
+
+function closeTutorial(){
+  document.getElementById('tutorialOverlay').classList.remove('active');
+  if(pendingStage!==null){ startGame(pendingStage); pendingStage=null; }
+}
+
+(function(){
+  const ol=document.getElementById('tutorialOverlay');
+  const _onTap=()=>{
+    Sound.se('next');
+    const isLast=(_tutPageIdx>=_tutPages.length-1);
+    if(isLast){
+      closeTutorial();
+    } else {
+      _tutPageIdx++;
+      _showTutPage(pendingStage, _tutPages, _tutPageIdx);
+    }
+  };
+  ol.addEventListener('click',_onTap);
+  ol.addEventListener('touchend',e=>{e.preventDefault();_onTap();},{passive:false});
+})();
 
 function drawTutorialPreview(canvas,si,foodNames){
   const c=canvas.getContext('2d');
@@ -2341,17 +2498,6 @@ function drawTutorialPreview(canvas,si,foodNames){
     c.fillText(def.kcal+'kcal',ex,ey+rad*0.7);
   });
 }
-
-function closeTutorial(){
-  document.getElementById('tutorialOverlay').classList.remove('active');
-  if(pendingStage!==null){ startGame(pendingStage); pendingStage=null; }
-}
-
-(function(){
-  const ol=document.getElementById('tutorialOverlay');
-  ol.addEventListener('click',()=>{ Sound.se('next'); closeTutorial(); });
-  ol.addEventListener('touchend',e=>{e.preventDefault(); Sound.se('next'); closeTutorial();},{passive:false});
-})();
 
 function fmtTime(s){const m=Math.floor(s/60),ss=Math.floor(s%60);return`${m}:${ss<10?'0':''}${ss}`;}
 
@@ -2466,7 +2612,15 @@ function startGame(si){
   raf=requestAnimationFrame(loop);
 }
 
-function pauseGame(){if(!gs.running||gs.paused)return;gs.paused=true;BGM.pause();showScreen('pause');document.getElementById('gameUI').style.display='block';}
+function pauseGame(){
+  if(!gs.running||gs.paused)return;
+  gs.paused=true;
+  BGM.pause();
+  // PAUSE画面のBGMトグルを現在の状態に同期
+  if(window._syncPauseBgmToggle) window._syncPauseBgmToggle();
+  showScreen('pause');
+  document.getElementById('gameUI').style.display='block';
+}
 function resumeGame(){gs.paused=false;BGM.resume();document.getElementById('pauseScreen').classList.remove('active');lastT=performance.now();raf=requestAnimationFrame(loop);}
 function retireGame(){
   gs.running=false;gs.retired=true;
@@ -3694,6 +3848,9 @@ function triggerBossEntry(){
   const data=BOSS_DATA[gs.stage];
   if(!data) return;
 
+  // STAGE2〜4: 警告テキスト表示タイミングでBGMをrushへ切り替え
+  if(!gs.endless) BGM.play('rush');
+
   // Phase1: 警告テキストのみ表示（ボスはまだ出ない）
   gs.bossStarted=true;
   gs.bossPattern=data.getPattern();
@@ -3877,6 +4034,7 @@ function triggerBossDefeat(){
     } else {
       gs.postBossPhase = 3;  // phase 3固定（0.75〜0.9秒間隔、最大7〜8体）
       spawnT=0;   // 通常スポーン再開
+      BGM.playResume('stage');  // rush→stage BGMを途中から再開
     }
   } else if(POST_BOSS_MODE === 'instant_clear'){
     // triggerClear();
@@ -3914,6 +4072,7 @@ function triggerBossTimeUp(){
     decayRate:1.8,
   });
   if(gs.hp<=0&&gs.running) triggerGO();
+  else if(!gs.endless) BGM.playResume('stage');  // rush→stage BGMを途中から再開
 }
 
 // ─── 斬撃エフェクト発火 ───
@@ -4120,7 +4279,6 @@ function loop(now){
           // 50%: 通常RUSH
           endlessRushActive=true;endlessRushDur=15;
           Sound.se('rush_start');
-          BGM.play('rush');
           const _rb=document.getElementById('endless-rush-badge');
           _rb.style.transition='none';
           _rb.style.display='block';
@@ -4152,7 +4310,6 @@ function loop(now){
         if(endlessRushDur<=0){
           endlessRushActive=false;
           endlessNextRush=getNextRushInterval();
-          BGM.play('endless');
           document.getElementById('endless-rush-badge').style.display='none';
         }
       }
@@ -4501,6 +4658,43 @@ wire('btnEndless',      ()=>startEndless());
 wire('btnBack',         ()=>{ Sound.se('back'); showScreen('title'); });
 wire('btnContinue',     ()=>{ Sound.se('next'); resumeGame(); });
 wire('btnRetire',       ()=>{ Sound.se('back'); retireGame(); });
+
+// ─── PAUSE画面 BGMトグル初期化 ───
+(()=>{
+  const sw=document.getElementById('pause-bgm-switch');
+  const st=document.getElementById('pause-bgm-state');
+  if(!sw||!st) return;
+  const _syncPauseBgm=()=>{
+    const on=Save.getBGMOn();
+    sw.classList.toggle('on',on);
+    st.textContent=on?'ON':'OFF';
+  };
+  _syncPauseBgm();
+  const _fn=()=>{
+    const next=!Save.getBGMOn();
+    Save.setBGMOn(next);
+    _syncPauseBgm();
+    BGM.setBGMEnabled(next);
+    if(next){
+      // ONに戻す: ゲーム中なのでstage/endlessBGMを先頭から再生
+      BGM.play(gs.endless?'endless':'stage');
+    }
+    Sound.se('toggle');
+    // ステージセレクトのトグルUIも同期
+    const selSw=document.getElementById('bgm-toggle-switch');
+    const selSt=document.getElementById('bgm-toggle-state');
+    if(selSw) selSw.classList.toggle('on',next);
+    if(selSt) selSt.textContent=next?'ON':'OFF';
+  };
+  sw.addEventListener('click',e=>{e.stopPropagation();_fn();});
+  sw.addEventListener('touchend',e=>{e.preventDefault();e.stopPropagation();_fn();},{passive:false});
+  // pauseGame時に表示状態を同期
+  const _origPause=window.pauseGame;
+  if(typeof pauseGame==='function'){
+    const _orig=pauseGame;
+    window._syncPauseBgmToggle=_syncPauseBgm;
+  }
+})();
 wire('btnRetry',        ()=>{ Sound.se('next'); retryGame(); });
 wire('btnStage',        ()=>{ Sound.se('back'); if(raf)cancelAnimationFrame(raf);showScreen('stage'); });
 wire('ui-pause',        pauseGame);
@@ -4535,6 +4729,8 @@ wire('btnEndlessTitle', ()=>{ Sound.se('back'); if(raf)cancelAnimationFrame(raf)
       buildCards();
       resize();
       animateRain();
+      // BGMの初期ON/OFF設定を反映
+      if(!Save.getBGMOn()) BGM.setBGMEnabled(false);
     }, 300);
   });
 })();

@@ -37,6 +37,7 @@ const Assets = (() => {
     'stage1_tutorial'    : 'assets/ui/stage1_tutorial.png',
     'stage1_rule'        : 'assets/ui/stage1_rule.png',
     'stage2_tutorial'    : 'assets/ui/stage2_tutorial.png',
+    'stage2_tutorial_02' : 'assets/ui/stage2_tutorial_02.png',
     'stage3_tutorial'    : 'assets/ui/stage3_tutorial.png',
     'stage4_tutorial'    : 'assets/ui/stage4_tutorial.png',
     'endless_tutorial_01': 'assets/ui/endless_tutorial_01.png',

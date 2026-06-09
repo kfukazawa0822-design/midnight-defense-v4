@@ -115,6 +115,39 @@ const BGM = (() => {
   }
 
   /**
+   * BGMを再生する（同じキーが停止中なら currentTime を保持したまま再開）
+   * 別のキーが再生中なら通常の play() と同じ動作（新規キーは頭から再生）
+   * @param {string} key
+   */
+  function playResume(key) {
+    if (!_bgmEnabled) return;
+    if (!BGM_DEF[key]) {
+      console.warn('[BGM] 未定義のキー: ' + key);
+      return;
+    }
+
+    // 同じキーが再生中なら何もしない
+    if (_currentKey === key) return;
+
+    // 別のキーを止める
+    if (_currentKey && _audios[_currentKey]) {
+      _audios[_currentKey].pause();
+      // currentTime はリセットしない（次回 playResume で再開できるよう保持）
+    }
+    _currentKey = key;
+
+    const audio = _getAudio(key);
+    if (!audio) return;
+    const def = BGM_DEF[key];
+    audio.volume = Math.min(1, def.vol * _masterVol);
+    // currentTime はそのまま（途中から再開）
+    audio.play().catch(err => {
+      console.warn('[BGM] playResume失敗: ' + err.message);
+      _pendingKey = key;
+    });
+  }
+
+  /**
    * 現在再生中のBGMを停止する
    */
   function stop() {
@@ -189,5 +222,5 @@ const BGM = (() => {
     _pendingKey = null;
   }
 
-  return { play, stop, stopAll, setVolume, setBGMEnabled, pause, resume };
+  return { play, playResume, stop, stopAll, setVolume, setBGMEnabled, pause, resume };
 })();

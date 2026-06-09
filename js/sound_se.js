@@ -38,33 +38,52 @@ const Sound = (() => {
   };
 
   // =================================================================
-  // AudioContext（共有・1インスタンス）
+  // AudioContext（共有・1インスタンス、初回操作時に遅延生成）
   // =================================================================
-  const _ctx = new (window.AudioContext || window.webkitAudioContext)();
+  let _ctx = null;
+
+  function _getCtx() {
+    if (!_ctx) {
+      _ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return _ctx;
+  }
 
   // key → AudioBuffer のキャッシュ
   const _buffers = {};
+  let _unlocked = false;
 
   let _seEnabled = true;
 
   // =================================================================
   // スマホ unlock
-  // iOS/Android は最初のユーザー操作まで AudioContext が suspended になる。
-  // touchstart / click で一度 resume() を呼び、以降は正常に再生できる。
+  // { once: true } をやめて毎操作で resume を試みる。
+  // バックグラウンド復帰後に再 suspend された場合も確実に回復する。
   // =================================================================
   function _unlock() {
-    if (_ctx.state === 'suspended') {
-      _ctx.resume();
+    const ctx = _getCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(() => {
+        if (!_unlocked) {
+          _unlocked = true;
+          _preloadSE();   // unlock 完了後にロード開始
+        }
+      });
+    } else if (!_unlocked) {
+      _unlocked = true;
+      _preloadSE();
     }
   }
-  document.addEventListener('touchstart', _unlock, { once: true, passive: true });
-  document.addEventListener('click',      _unlock, { once: true });
+  document.addEventListener('touchstart', _unlock, { passive: true });
+  document.addEventListener('click',      _unlock);
 
   // =================================================================
   // SE プリロード（fetch → decodeAudioData → _buffers に格納）
+  // 初回 unlock 後に呼ばれる
   // =================================================================
-  (function _preloadSE() {
+  function _preloadSE() {
     Object.keys(SE_DEF).forEach(function(key) {
+      if (_buffers[key]) return;   // 既にロード済みならスキップ
       var def = SE_DEF[key];
       fetch(def.file)
         .then(function(res) {
@@ -72,7 +91,7 @@ const Sound = (() => {
           return res.arrayBuffer();
         })
         .then(function(ab) {
-          return _ctx.decodeAudioData(ab);
+          return _getCtx().decodeAudioData(ab);
         })
         .then(function(buffer) {
           _buffers[key] = buffer;
@@ -81,12 +100,11 @@ const Sound = (() => {
           console.error('[Sound] SE ロード失敗: ' + def.file, err);
         });
     });
-  })();
+  }
 
   // =================================================================
   // SE 再生
-  // BufferSource は使い捨て（再生終了後に GC が回収）。
-  // GainNode でボリュームを適用してから destination へ接続。
+  // resume が必要な場合は完了を待ってから source.start() を呼ぶ。
   // =================================================================
 
   /**
@@ -97,25 +115,26 @@ const Sound = (() => {
     if (!_seEnabled) return;
 
     var buffer = _buffers[key];
-    if (!buffer) {
-      // ロード未完了 or ファイルなし → サイレントスキップ
-      return;
+    if (!buffer) return;   // ロード未完了 or ファイルなし
+
+    var ctx = _getCtx();
+
+    var _doPlay = function() {
+      var gain = ctx.createGain();
+      gain.gain.value = SE_DEF[key].vol;
+      gain.connect(ctx.destination);
+      var source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(gain);
+      source.start(0);
+    };
+
+    if (ctx.state === 'suspended') {
+      // resume 完了を待ってから再生
+      ctx.resume().then(_doPlay).catch(function(){});
+    } else {
+      _doPlay();
     }
-
-    // AudioContext が suspended のままなら resume を試みる
-    if (_ctx.state === 'suspended') {
-      _ctx.resume();
-    }
-
-    var gain   = _ctx.createGain();
-    gain.gain.value = SE_DEF[key].vol;
-    gain.connect(_ctx.destination);
-
-    var source = _ctx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(gain);
-    source.start(0);
-    // source は再生後に自動的に切断される（使い捨て設計）
   }
 
   /**

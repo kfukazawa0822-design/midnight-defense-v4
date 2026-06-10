@@ -3118,6 +3118,13 @@ function updateEnemies(dt){
         addFloat(e.x,e.y,'‐'+e.def.kcal+'kcal','#f55');
         doBurst(e.x,e.y,'#ff2200',14);doShake(12);Sound.se('damage');flashDamage();
         enemies.splice(i,1);gs.combo=0;updateComboUI();
+        // bossEnemy がプレイヤーに到達した場合もカウント（倒さずとも処理済み扱い）
+        if(gs.bossActive && e.bossEnemy){
+          gs.bossRemaining=Math.max(0,gs.bossRemaining-1);
+          gs.bossFlash=1.0;
+          updateBossStars();
+          if(gs.bossRemaining<=0) triggerBossDefeat();
+        }
         if(gs.hp<=0&&gs.running)triggerGO();
         continue;
       }

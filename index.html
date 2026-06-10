@@ -2126,7 +2126,7 @@ const ENDLESS_TUT = [
   {
     imgKey: 'endless_tutorial_02',
     fallback: '💪',
-    title: 'SPECIAL SUPPORT ITEMS',
+    title: 'SUPPORT ITEMS',
     text: 'ENDLESS MODE限定で、\n特殊アイテムが低確率出現！\n[ダンベル]　タップでHP回復\n[マッチョマン]　2回タップで全敵に1ダメ\n見つけたら最優先で回収しよう。',
     tap: '▶ &nbsp;TAP TO NEXT',
   },
@@ -4591,8 +4591,10 @@ function handleTap(tapX,tapY){
     const hitR = CFG.BASE_R*sizeScale*(0.07+sc*0.93) + TAP_R;
     const dx=tapX-e.x, dy=tapY-e.y;
     const dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist<hitR && dist<bestDist){
-      bestDist=dist;
+    // progressが高い（手前にいる）敵を優先するスコア
+    const score = dist / (1 + e.progress * 2.0);
+    if(dist<hitR && score<bestDist){
+      bestDist=score;
       hitEnemyJ=j;
     }
   }

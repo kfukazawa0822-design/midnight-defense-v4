@@ -1294,7 +1294,7 @@ const BOSS_DATA = {
 
 // ボス演出テキスト（後から文言のみ変更可）
 const BOSS_TEXT = {
-  appear: '⚠ 食欲の化身が目覚めた ⚠',   // 仮テキスト
+  appear: '⚠ 食欲ノ化身が目覚めた ⚠',   // 仮テキスト
   defeat: '撃退成功！',                    // 仮テキスト
   timeUp: '食欲の逆襲！',                  // 仮テキスト
 };
@@ -2324,7 +2324,7 @@ const TUTORIAL_DATA={
      body:'一部、接近スピードの速い敵が出現！\n焦らず優先順位を見極めて対処しよう。',
      enemies:['パン','おにぎり','ラーメン'],imgKey:'stage2_tutorial'},
     {badge:'STAGE 02 — BOSS ENCOUNTER',title:'BOSS INCOMING',
-     body:'（仮テキスト）\n食欲の化身が目覚めた。\n召喚される敵をすべて倒してボスを撃退せよ。',
+     body:'食欲ノ化身が目覚めた。\n召喚される敵をすべて倒してボスを撃退せよ。',
      enemies:[],imgKey:'stage2_tutorial_02'},
   ],
   3:{badge:'STAGE 03 — LIPID JUNGLE',title:'SHIELDED ENEMIES DETECTED',
@@ -2577,6 +2577,9 @@ function startGame(si){
       bossVY:0,             // 落下速度（px/秒）
       bossFalling:false,    // 落下中フラグ
       postBossPhase:null,   // ボス撃破後の固定フェーズ（nullなら通常getPhase）
+      bossFloatTime:0,      // 浮遊アニメ用タイマー（秒）
+      bossScaleTime:0,      // 拡大アニメ用タイマー（秒）
+      bossFallScale:1.0,    // 落下開始時点でサイズを固定する係数
       // ─── ウェーブステートマシン ───
       bossSet:0,            // 現在のセット番号（0〜2）
       bossStep:0,           // セット内の段階インデックス
@@ -4003,6 +4006,10 @@ function triggerBossDefeat(){
   gs.bossActive=false;
   gs.bossFalling=true;
   gs.bossVY=0;
+  // 落下開始時点のスケールを固定（浮遊・拡大アニメを停止）
+  const _H=gc.height;
+  const _scaleProg=Math.min(gs.bossScaleTime/30.0,1.0);
+  gs.bossFallScale=_H*(0.50+0.45*_scaleProg);  // px値で保持
   _bossSpawnQueue=[];
 
   document.getElementById('boss-ui').style.display='none';
@@ -4173,12 +4180,26 @@ function drawBoss(){
   if(!data) return;
 
   const img=Assets.get(data.imgKey);
-  const bossW=W*0.70;  // 調整定数: 画面幅の70%
+
+  // ─── サイズ計算 ───
+  let bossW;
+  if(gs.bossFalling){
+    // 落下中: 固定サイズ（px値）を使用
+    bossW = gs.bossFallScale || H*0.80;
+  } else {
+    // 通常時: 30秒かけてH*0.80→H*0.85に拡大
+    const scaleProg = Math.min((gs.bossScaleTime||0) / 30.0, 1.0);
+    bossW = H * (0.50 + 0.45 * scaleProg);  // 0.50→0.95 (30秒)
+  }
   const bossH=img ? bossW*(img.naturalHeight/img.naturalWidth) : bossW;
 
-  // 通常時のボス中心Y（画面上から25%位置）
-  const BOSS_CENTER_Y=0.25;
-  const normalDrawY=H*BOSS_CENTER_Y-bossH/2;
+  // ─── 浮遊オフセット（落下中は適用しない）───
+  const floatOffset = gs.bossFalling ? 0
+    : Math.sin((gs.bossFloatTime||0) * (Math.PI*2 / 3.0)) * 12;
+
+  // 通常時のボス中心Y（画面中心より少し上）
+  const BOSS_CENTER_Y=0.42;
+  const normalDrawY=H*BOSS_CENTER_Y-bossH/2+floatOffset;
 
   const drawY=gs.bossFalling ? gs.bossY : normalDrawY;
   const drawX=(W-bossW)/2;
@@ -4514,6 +4535,11 @@ function loop(now){
 
       // ─── bossFlash 減衰（0.1秒で消える）───
       if(gs.bossFlash>0) gs.bossFlash=Math.max(0,gs.bossFlash-dt*10);
+      // ─── ボス浮遊・拡大タイマー更新 ───
+      if(gs.bossActive) {
+        gs.bossFloatTime+=dt;
+        gs.bossScaleTime+=dt;
+      }
 
       updateEnemies(dt);updateBullets(dt);updateParts(dt);updateFloats(dt);checkPlayerEvolution();updateHUD();
       updateSlashEffects(dt);

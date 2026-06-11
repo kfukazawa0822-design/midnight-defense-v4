@@ -829,6 +829,21 @@ canvas{display:block;position:absolute;top:0;left:0;pointer-events:none;}
 #story-next-btn.show{opacity:1;}
 #story-next-btn:hover{background:rgba(255,255,255,0.08);border-color:#fff;box-shadow:0 0 28px rgba(255,255,255,0.25);}
 #story-next-btn:active{transform:scale(0.96);}
+/* STAGE4専用：ENDLESSアンロックボタン強調 */
+#story-next-btn.unlock{
+  border-color:rgba(255,210,0,0.8);
+  color:#ffd700;
+  font-size:clamp(13px,2vw,17px);
+  letter-spacing:4px;
+  box-shadow:0 0 24px rgba(255,200,0,0.4),inset 0 0 12px rgba(255,180,0,0.08);
+  text-shadow:0 0 12px rgba(255,210,0,0.8);
+  animation:unlockBtnPulse 1.4s ease-in-out infinite;
+}
+#story-next-btn.unlock:hover{background:rgba(255,200,0,0.1);border-color:#ffd700;box-shadow:0 0 36px rgba(255,200,0,0.6);}
+@keyframes unlockBtnPulse{
+  0%,100%{box-shadow:0 0 24px rgba(255,200,0,0.4),inset 0 0 12px rgba(255,180,0,0.08);}
+  50%{box-shadow:0 0 40px rgba(255,210,0,0.7),inset 0 0 18px rgba(255,180,0,0.15);}
+}
 /* SVGクリップパス用コンテナ（不可視） */
 #story-zigzag-svg{position:absolute;width:0;height:0;overflow:hidden;}
 
@@ -2120,21 +2135,21 @@ const ENDLESS_TUT = [
     imgKey: 'endless_tutorial_01',
     fallback: '🌙',
     title: 'ENDLESS MODE',
-    text: '制限時間なしの特殊モード！\nSTAGE1〜4で登場した\n全種類のエネミーが出現。\nどこまで生き残れるか挑戦しよう。',
+    text: '制限時間なしの特殊モード！\nSTAGE1〜4で登場した\n全種類のエネミーが出現。\n\n限界まで生き残り、最高記録を目指そう！',
     tap: '▶ &nbsp;TAP TO NEXT',
   },
   {
     imgKey: 'endless_tutorial_02',
     fallback: '💪',
     title: 'SUPPORT ITEMS',
-    text: 'ENDLESS MODE限定で、\n特殊アイテムが低確率出現！\n[ダンベル]　タップでHP回復\n[マッチョマン]　2回タップで全敵に1ダメ\n見つけたら最優先で回収しよう。',
+    text: 'ENDLESS MODE限定で、\n特殊アイテムが低確率出現！\n[ダンベル]　タップでHP回復\n[マッチョマン]　2回タップで全敵に1ダメージ\n見つけたら最優先で回収しよう。',
     tap: '▶ &nbsp;TAP TO NEXT',
   },
   {
     imgKey: 'endless_tutorial_03',
     fallback: '⬆️',
     title: 'LEVEL UP SYSTEM',
-    text: '撃破したカロリー数に応じて\nLEVELが上昇！ゲームが進むほど\n難易度もどんどん上昇していく。\n\n限界まで生き残り、\n最高記録を目指そう！',
+    text: '撃破したカロリー数に応じて\nLEVELが上昇！ゲームが進むほど\n難易度もどんどん上昇していく。\n\nハイスコアはBEST5まで記録されるぞ！',
     tap: '▶ &nbsp;TAP TO START',
   },
 ];
@@ -2320,17 +2335,17 @@ let _s1tActive = false;
 const TUTORIAL_DATA={
   1:null,
   2:[
-    {badge:'STAGE 02 — CARBS MTN',title:'FAST ENEMIES INCOMING',
+    {title:'FAST ENEMIES INCOMING',
      body:'一部、接近スピードの速い敵が出現！\n焦らず優先順位を見極めて対処しよう。',
      enemies:['パン','おにぎり','ラーメン'],imgKey:'stage2_tutorial'},
-    {badge:'STAGE 02 — BOSS ENCOUNTER',title:'BOSS INCOMING',
+    {title:'BOSS INCOMING',
      body:'食欲ノ化身が目覚めた。\n召喚される敵をすべて倒してボスを撃退せよ。',
      enemies:[],imgKey:'stage2_tutorial_02'},
   ],
-  3:{badge:'STAGE 03 — LIPID JUNGLE',title:'SHIELDED ENEMIES DETECTED',
+  3:{title:'SHIELDED ENEMIES DETECTED',
      body:'大型敵は2回タップが必要。\nまずはシールドを破壊しよう。',
      enemies:['背脂麺','ステーキ','ポテト'],imgKey:'stage3_tutorial'},
-  4:{badge:'STAGE 04 — IZAKAYA',title:'MAXIMUM HUNGER ALERT',
+  4:{title:'MAXIMUM HUNGER ALERT',
      body:'高速接近エネミーと\nシールド装備エネミーが同時出現！\n終盤の食欲ラッシュに備えよ。',
      enemies:['ピザ','チーズ盛','ビール'],imgKey:'stage4_tutorial'},
 };
@@ -2566,6 +2581,7 @@ function startGame(si){
       running:true,paused:false,combo:0,maxCombo:0,comboTimer:null,
       cleared:false,retired:false,cdShown:false,rushStarted:false,
       damageTaken:0,
+      clearedImgKey:null,   // クリア時点の機体画像キーを保存
       // ─── ボスシステム ───
       bossStarted:false,    // 警告発動済みフラグ
       bossActive:false,     // 進行中フラグ（撃破判定を受け付ける）
@@ -2590,6 +2606,7 @@ function startGame(si){
   };
   enemies=[];bullets=[];parts=[];floats=[];
   spawnT=0;shakeMag=0;cdActive=false;_lastPlayerLv=0;
+  _playerBlinking=false;_playerBlinkTimer=0;_playerFloatTime=0;
   _bossSpawnQueue=[];_bossSpawnTimer=0;_bossWaveSteps=[];
   _prolifQueue=[];_prolifTimer=0;_slashEffects=[];
   document.getElementById('boss-ui').style.display='none';
@@ -2647,6 +2664,7 @@ function startEndless(){
   };
   enemies=[];bullets=[];parts=[];floats=[];
   spawnT=0;shakeMag=0;cdActive=false;_lastPlayerLv=0;
+  _playerBlinking=false;_playerBlinkTimer=0;_playerFloatTime=0;
   endlessRushActive=false;endlessRushTimer=0;
   _enemyFreezeTimer=0;
   endlessNextRush=getNextRushInterval();
@@ -3459,11 +3477,22 @@ function drawFloats(){
 
 /* ─── 機体レベル変化の検知 → 進化演出 ─── */
 let _lastPlayerLv = 0;  // 前フレームの機体Lv（1〜4）
+let _playerFloatTime = 0;    // 浮遊アニメ用タイマー（秒、常時加算）
+let _playerBlinking = false; // 点滅中フラグ
+let _playerBlinkTimer = 0;   // 点滅タイマー（秒）
+let _playerBlinkFrom = '';   // 点滅：変化前の画像キー
+let _playerBlinkTo = '';     // 点滅：変化後の画像キー
+const PLAYER_BLINK_DURATION = 1.0;   // 点滅総時間（秒）
+const PLAYER_BLINK_INTERVAL = 0.167; // 1回の切り替え間隔（秒、3往復÷1秒）
 
 function _playerLvFromKey(key){
   return key === 'rabbit_lv4' ? 4
        : key === 'rabbit_lv3' ? 3
        : key === 'rabbit_lv2' ? 2 : 1;
+}
+
+function getPlayerImageKeyForLv(lv){
+  return lv===4?'rabbit_lv4':lv===3?'rabbit_lv3':lv===2?'rabbit_lv2':'rabbit_lv1';
 }
 
 function checkPlayerEvolution(){
@@ -3475,6 +3504,12 @@ function checkPlayerEvolution(){
   _lastPlayerLv = lv;
   if(prev === 0) return;                     // ゲーム開始直後の初期化は演出不要
 
+  // 点滅エフェクト発火
+  _playerBlinkFrom = getPlayerImageKeyForLv(prev);
+  _playerBlinkTo   = key;
+  _playerBlinking  = true;
+  _playerBlinkTimer = 0;
+
   const W = gc.width, H = gc.height;
   // プレイヤー機体の少し上（画面下部固定）
   const bannerX = W / 2;
@@ -3484,7 +3519,7 @@ function checkPlayerEvolution(){
   if(lv === 1){
     text = '⚠ DANGER ⚠';   color = '#ff2222';
   } else if(lv === 3){
-    text = '✦ POWER UP ✦'; color = '#00eeff';
+    text = '✦ LIGHT BODY ✦'; color = '#00eeff';
   } else if(lv === 4){
     text = '✦ PERFECT MODE ✦'; color = '#ffd700'; perfect = true;
   } else {
@@ -3529,15 +3564,28 @@ function drawPlayer(){
   const cx=W/2,cy=H*CFG.PLAYER_Y;
 
   // ─── rabbit_lv1〜4: 状態に応じた画像を取得 ───
-  const imgKey = getPlayerImageKey();
+  // 点滅中は From/To を交互に切り替え、終了後は To（新レベル）に固定
+  let imgKey;
+  if(gs.cleared && gs.clearedImgKey){
+    imgKey = gs.clearedImgKey;   // クリア済み: 固定値を使用
+  } else if(_playerBlinking){
+    const blinkPhase = Math.floor(_playerBlinkTimer / PLAYER_BLINK_INTERVAL) % 2;
+    imgKey = blinkPhase === 0 ? _playerBlinkTo : _playerBlinkFrom;
+  } else {
+    imgKey = getPlayerImageKey();
+  }
   const shipImg = Assets.get(imgKey);
+
+  // ─── 浮遊オフセット（2.5秒周期・±4px）───
+  const floatOffset = Math.sin(_playerFloatTime * (Math.PI*2 / 2.5)) * 4;
+
   if(shipImg){
     // 横幅を画面幅の92%に拡大、アスペクト比維持
     const dW = W * 0.92;
     const dH = dW * (shipImg.naturalHeight / shipImg.naturalWidth);
-    // 画像下端を画面最下部にぴったり合わせる
+    // 画像下端を画面最下部にぴったり合わせる（浮遊オフセット加算）
     const drawX = cx - dW / 2;
-    const drawY = H - dH;
+    const drawY = H - dH + floatOffset + 2;  // +2px下オフセット（上移動時の見切れ防止）
     ctx.save();
     ctx.shadowColor='rgba(140,80,255,0.6)';
     ctx.shadowBlur=20;
@@ -3740,30 +3788,45 @@ const STORY_TEXT = [
   {
     label: 'STAGE 01 — SWEETS',
     body:
-`（仮テキスト）
-深夜の帰り道、あなたは誘惑に打ち勝った。
-甘い罠を退けた今夜は、よく眠れそうだ。`,
+`深夜の帰り道、あなたは甘い誘惑を振り切った。
+...今は甘いものの気分じゃないだけなのかも。
+
+ホッとしたのも束の間、通りの奥から
+もっと食欲のそそる匂いがあなたを包み込んだ＿＿。`,
   },
   {
     label: 'STAGE 02 — CARBS',
     body:
-`（仮テキスト）
-炭水化物の嵐を乗り越えた。
-だが、より強い欲望が次の角で待っている。`,
+`完ッ全に油断していた。
+ラーメンを食べたいと思っていたら、ラーメンに酷似した
+バケモノが急に襲ってくるから。
+
+バニーガールたるもの、体型管理は重要である。
+そう簡単に誘惑には負けてられないよ！`,
   },
   {
     label: 'STAGE 03 — FAT',
     body:
-`（仮テキスト）
-脂質の密林を突破した。
-体は悲鳴を上げているが、意志はまだ折れていない。`,
+`あなたは”揚げ物ギルティ街道”を突破した。
+...名前からして反省する気がない。
+ふざけてる。
+
+しかし、私には負けられない理由がある。
+
+これ以上食べると...
+耳が伸びる＿＿。`,
   },
   {
     label: 'STAGE 04 — IZAKAYA',
     body:
-`（仮テキスト）
-すべての誘惑を退けた。
-今夜のあなたは、自分自身に勝った。`,
+`長い戦いだった。
+あなたは甘味も、炭水化物も、脂質も、アルコールも...すべての誘惑を退けた。
+”今夜”のあなたは、確かに自分自身に勝った。
+
+...それなのに、何故か終わった気がしない。
+
+その時。闇の向こうで、
+巨大な気配が目を覚ました＿＿`,
   },
 ];
 
@@ -3802,7 +3865,16 @@ function showStoryPanel(){
   body.textContent  = data.body;
   panel.classList.remove('slidein');
   document.getElementById('story-text-wrap').classList.remove('fadein');
-  nextBtn.classList.remove('show');
+  nextBtn.classList.remove('show','unlock');
+
+  // STAGE4のみボタン文言・スタイルを変更
+  if(si === 3){
+    nextBtn.textContent = 'ENDLESS MODE UNLOCK';
+    nextBtn.classList.add('unlock');
+  } else {
+    nextBtn.textContent = 'NEXT \u00a0→';
+  }
+
   panel.classList.add('active');
 
   // フレームを1回挟んでからスライドイン開始（transition発火のため）
@@ -4245,6 +4317,7 @@ function drawBoss(){
 
 function triggerClear(){
   cdActive=false;document.getElementById('cd-overlay').style.display='none';
+  gs.clearedImgKey = getPlayerImageKey();   // クリア時点の機体画像キーを固定
   gs.running=false;gs.cleared=true;clearBurst();
   if(window._bgmFadeTimer){ clearInterval(window._bgmFadeTimer); window._bgmFadeTimer=null; }
   BGM.stopAll();
@@ -4425,6 +4498,9 @@ function loop(now){
       }
       updateEnemies(dt);updateBullets(dt);updateParts(dt);updateFloats(dt);
       checkPlayerEvolution();
+      // ─── プレイヤー浮遊・点滅タイマー ───
+      _playerFloatTime+=dt;
+      if(_playerBlinking){ _playerBlinkTimer+=dt; if(_playerBlinkTimer>=PLAYER_BLINK_DURATION) _playerBlinking=false; }
       updateEndlessHUD();
     } else {
       gs.timeLeft=Math.max(0,gs.timeLeft-dt);
@@ -4548,7 +4624,11 @@ function loop(now){
         gs.bossScaleTime+=dt;
       }
 
-      updateEnemies(dt);updateBullets(dt);updateParts(dt);updateFloats(dt);checkPlayerEvolution();updateHUD();
+      updateEnemies(dt);updateBullets(dt);updateParts(dt);updateFloats(dt);checkPlayerEvolution();
+      // ─── プレイヤー浮遊・点滅タイマー ───
+      _playerFloatTime+=dt;
+      if(_playerBlinking){ _playerBlinkTimer+=dt; if(_playerBlinkTimer>=PLAYER_BLINK_DURATION) _playerBlinking=false; }
+      updateHUD();
       updateSlashEffects(dt);
     }
   } else updateParts(dt);
